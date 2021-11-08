@@ -1,7 +1,10 @@
+pip install geopandas
+
 import csv
 from shapely.geometry import Point, shape, mapping
 from fiona import collection
 from shapely.ops import unary_union
+import geopandas as gpd
 
 with open('some.csv') as f:
     reader = csv.DictReader(f)
@@ -13,10 +16,8 @@ with open('some.csv') as f:
     for row in reader:
         point = Point(float(row['lon']), float(row['lat']))
 
-
 schema = { 'geometry': 'Point', 'properties': { 'name': 'str' } }
-with collection(
-    "some.shp", "w", "ESRI Shapefile", schema) as output:
+with collection("some.shp", "w", "ESRI Shapefile", schema) as output:
     with open('some.csv') as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -30,17 +31,32 @@ with collection("some.shp", "r") as input:
 with collection("some.shp", "r") as input:
     # schema = input.schema.copy()
     schema = { 'geometry': 'Polygon', 'properties': { 'name': 'str' } }
-    with collection(
-        "some_buffer.shp", "w", "ESRI Shapefile", schema) as output:
+    with collection("some_buffer.shp", "w", "ESRI Shapefile", schema) as output:
         for point in input:
             output.write({'properties': {'name': point['properties']['name']},'geometry': mapping(shape(point['geometry']).buffer(5.0))})
 
 with collection("some_buffer.shp", "r") as input:
     schema = input.schema.copy()
-    with collection(
-            "some_union.shp", "w", "ESRI Shapefile", schema) as output:
+    with collection("some_union.shp", "w", "ESRI Shapefile", schema) as output:
         shapes = []
         for f in input:
             shapes.append(shape(f['geometry']))
         merged = unary_union(shapes)
         output.write({'properties': {'name': 'Buffer Area'},'geometry': mapping(merged)})
+
+points = gpd.read_file('some.shp')
+print (points)
+
+get_ipython().run_line_magic('matplotlib', 'inline')
+points.plot()
+
+buffer = gpd.read_file('some_buffer.shp')
+
+get_ipython().run_line_magic('matplotlib', 'inline')
+points.plot()
+buffer.plot()
+
+union = gpd.read_file('some_union.shp')
+points.plot()
+buffer.plot()
+union.plot()
