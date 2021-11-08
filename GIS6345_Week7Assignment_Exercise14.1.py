@@ -12,4 +12,6 @@ def sed(pattern,replacement,f1,f2):
     except: 
         print('Something went wrong.')
 
+    fout.close()
+
 sed('a',' ','words.txt','newwords.txt')
